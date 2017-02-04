@@ -1,0 +1,57 @@
+host:
+    loopback:
+        ip: 10.101.1.1
+
+interfaces:
+    - name: ge-0/0/1
+      ip: 192.168.56.201
+      description: vboxnet0
+    - name: ge-0/0/2
+      vlans:
+      - id: 1
+        ip: 10.1.1.1
+        description: to vsrx-CE1-white
+      - id: 2
+        ip: 10.2.1.1
+        description: to vsrx-CE1-black
+    - name: ge-0/0/3
+      ip: 10.100.5.1
+      description: to vsrx-PE2
+      protocols:
+      - iso
+      - mpls
+    - name: ge-0/0/4
+      ip: 10.100.1.2
+      description: to vsrx-P1
+      protocols:
+      - iso
+      - mpls      
+
+isis:
+    systemid: 49.0002.0010.0101.0001.0001.00
+
+bgp:
+    neighbors: 
+        - name: vsrx-P1
+          peer_ip: 10.101.5.5  
+
+instances:
+  - name: black
+    rt: target:65000:111
+    rd: 111
+    interfaces:
+      - name: ge-0/0/2.1
+    prefixes:
+      - route: 10.11.1.0/30
+        nexthop: 10.1.1.2
+  - name: white
+    rt: target:65000:222
+    rd: 222
+    importpolicy: white-import
+    exportpolicy: white-export
+    interfaces:
+      - name: ge-0/0/2.2
+    prefixes:
+      - route: 10.22.1.0/30
+        nexthop: 10.2.1.2        
+  

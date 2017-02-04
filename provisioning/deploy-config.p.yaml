@@ -1,0 +1,132 @@
+# This task configures all devices
+- name: Generate and Deploy Configuration to P Routers
+  hosts: vsrx-p
+  connection: local
+  gather_facts: no
+  vars:
+    restart: 'yes'
+    reboot_wait: 300
+  vars_prompt:
+  - name: shutdown
+    prompt: "Enter 'shutdown' to continue"
+    private: no
+  roles:
+    - Juniper.junos
+  tasks:
+    - name: Build configuration
+      template: src=vsrx-p.conf.j2 dest=/tmp/{{ inventory_hostname }}.conf
+
+    # - name: Rebooting devices running Junos OS ... restart={{ restart }}"
+    #   junos_shutdown:
+    #     host={{ ansible_ssh_host }}
+    #     port={{ ansible_ssh_port }}
+    #     shutdown='shutdown'
+    #     reboot={{ restart }}
+    #   register: sd_result
+    #   # notify:
+    #   #   - pause_for_reboot
+    #   #   - wait_reboot
+    #   ignore_errors: True
+
+    - name: Deploy config to device ... please wait
+      junos_install_config:
+        host={{ ansible_ssh_host }}
+        port={{ ansible_ssh_port }}
+        user=root
+        passwd=Juniper
+        file=/tmp/{{ inventory_hostname }}.conf
+        overwrite=yes
+        replace=no
+        logfile=/tmp/changes.log
+
+    - name: Checking NETCONF connectivity
+      wait_for: host={{ ansible_ssh_host }} port={{ ansible_ssh_port }} timeout=5
+
+  handlers:
+    - name: pause_for_reboot
+      pause: seconds=60
+      when: sd_result.reboot == true
+    - name: wait_reboot
+      wait_for: host={{ ansible_ssh_host }} port={{ ansible_ssh_port }} timeout={{ reboot_wait }}
+      when: sd_result.reboot == true
+
+
+
+
+# This task gets all Junos configuration from all devices
+- name: Generate and Deploy Configuration to PE Routers
+  hosts: vsrx-pe
+  connection: local
+  gather_facts: no
+  vars:
+    restart: 'yes'
+    reboot_wait: 300
+  vars_prompt:
+  - name: shutdown
+    prompt: "Enter 'shutdown' to continue"
+    private: no
+  roles:
+    - Juniper.junos
+  tasks:
+    - name: Build configuration
+      template: src=vsrx-pe.conf.j2 dest=/tmp/{{ inventory_hostname }}.conf
+
+
+    # - name: Rebooting devices running Junos OS ... restart={{ restart }}"
+    #   junos_shutdown:
+    #     host={{ ansible_ssh_host }}
+    #     port={{ ansible_ssh_port }}
+    #     shutdown='shutdown'
+    #     reboot={{ restart }}
+    #   register: sd_result
+    #   # notify:
+    #   #   - pause_for_reboot
+    #   #   - wait_reboot
+    #   ignore_errors: True
+
+    - name: Deploy config to device ... please wait
+      junos_install_config:
+        host={{ ansible_ssh_host }}
+        port={{ ansible_ssh_port }}
+        user=root
+        passwd=Juniper
+        file=/tmp/{{ inventory_hostname }}.conf
+        overwrite=yes
+        replace=no
+        logfile=/tmp/changes.log
+
+    - name: Checking NETCONF connectivity
+      wait_for: host={{ ansible_ssh_host }} port={{ ansible_ssh_port }} timeout=5
+
+  handlers:
+    - name: pause_for_reboot
+      pause: seconds=60
+      when: sd_result.reboot == true
+    - name: wait_reboot
+      wait_for: host={{ ansible_ssh_host }} port={{ ansible_ssh_port }} timeout={{ reboot_wait }}
+      when: sd_result.reboot == true
+
+# This task gets all Junos configuration from all devices
+- name: Generate and Deploy Configuration to  CE Routers
+  hosts: vsrx-ce
+  connection: local
+  gather_facts: no
+  roles:
+    - Juniper.junos
+  tasks:
+    - name: Build configuration
+      template: src=vsrx-ce.conf.j2 dest=/tmp/{{ inventory_hostname }}.conf
+
+    - name: Deploy config to device ... please wait
+      junos_install_config:
+        host={{ ansible_ssh_host }}
+        port={{ ansible_ssh_port }}
+        user=root
+        passwd=Juniper
+        file=/tmp/{{ inventory_hostname }}.conf
+        overwrite=yes
+        replace=no
+        logfile=/tmp/changes.log
+
+    - name: Checking NETCONF connectivity
+      wait_for: host={{ ansible_ssh_host }} port={{ ansible_ssh_port }} timeout=5

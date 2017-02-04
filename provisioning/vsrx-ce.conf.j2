@@ -1,0 +1,155 @@
+#jinja2: lstrip_blocks: True
+#jinja2: ltrim_blocks: True
+
+system {
+    host-name {{ inventory_hostname }};
+    root-authentication {
+        encrypted-password "$1$fv3Ke4LT$10nlsy3SEJy5ainm.kPTd.";
+        ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key";
+    }
+    login {
+        user vagrant {
+            uid 2000;
+            class super-user;
+            authentication {
+                ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key";
+            }
+        }
+        user barnesry {
+            uid 2001;
+            class super-user;
+            authentication {
+                ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC+meE8GUTaFAvpcZln8QPIPuc49QJW+iRMte8HH0EgS24ga3+cMmrFCXA/bllNBU3jZy2VeGTAZkhECwZjnPSE9Z6Fc/8Gw8D7ZevdPNOF4ZsUMskbrH4mqZ/SpQO3M60uizvbCpZN7TuKaZbPA9zn/gF3JLWUPpmGGiHztkzEDygZ9yRQON/qXyBrI7v8rb5zVe+8QgDNmr2msuVHlF701hM8GpIpEfP2+/7MYLxNQMJdS14NemVo7bXAP5Lw6mde//d99QHGUkm6ptTmBj/6nXUM1CFKUC/GH3n+2h6w1gtTtjUTM96rIcYi5amb8vIWa9oOA2BxidFaOOnFO5SP barnesry@barnesry-mbp";
+            }
+        }
+    }
+    services {
+        ssh {
+            root-login allow;
+        }
+        netconf {
+            ssh;
+        }
+    }
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any notice;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+    extensions {
+        providers {
+            juniper {
+                license-type juniper deployment-scope commercial;
+            }
+            chef {
+                license-type juniper deployment-scope commercial;
+            }
+        }
+    }
+}
+
+
+interfaces {
+	lo0 {
+		unit 0 {
+			family inet {
+				address {{ host.loopback.ip }}/32;
+                primary;
+			}
+		}
+	}
+  ge-0/0/0 {
+      description "default_vagrant_bridged";
+      unit 0 {
+          family inet {
+              dhcp;
+          }
+      }
+  }
+{% for interface in interfaces -%}
+    {{ interface.name }} {
+        {% if interface.vlans is defined -%}
+        vlan-tagging;
+        {% for vlan in interface.vlans -%}
+        unit {{ vlan.id }} {
+            description "{{ vlan.description }}";
+            vlan-id {{ vlan.id }};
+            family inet {
+                address {{ vlan.ip }}/24;
+            }
+        }
+        {% endfor %}
+        {% else -%}
+        unit 0 {
+            description "{{interface.description }}";
+            family inet {
+                address {{ interface.ip }}/24;
+            }
+        }
+        {% endif %}
+    }
+{% endfor %}
+}
+protocols {
+    lldp {
+        interface all;
+    }
+}
+vlans {
+    default {
+        vlan-id 1;
+    }
+}
+
+
+routing-options {
+    router-id {{ host.loopback.ip }};
+    forwarding-table {
+        export PFE-LB;
+    }
+}
+
+policy-options {
+    policy-statement PFE-LB {
+        then {
+            load-balance per-packet;
+        }
+    }
+}
+
+{% if instances is defined %}
+routing-instances {
+    {% for instance in instances %}
+    {{ instance.name }} {
+        instance-type {{ instance.type }};
+        {% for interface in instance.interfaces %}
+        interface {{ interface.name }};
+        {% endfor %}
+        routing-options {
+            static {
+                {% for route in instance.routes %}
+                route {{ route.prefix }} next-hop {{ route.nexthop }};
+                {% endfor %}
+            }
+        }
+    }
+    {% endfor %}
+}
+{% endif %}
+
+security {
+    forwarding-options {
+        family {
+            mpls {
+               mode packet-based;
+            }
+        }
+    }
+}

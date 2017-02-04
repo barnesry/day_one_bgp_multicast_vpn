@@ -1,0 +1,330 @@
+#jinja2: lstrip_blocks: True
+
+system {
+    host-name {{ inventory_hostname }};
+    root-authentication {
+        encrypted-password "$1$fv3Ke4LT$10nlsy3SEJy5ainm.kPTd.";
+        ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key";
+    }
+    login {
+        user vagrant {
+            uid 2000;
+            class super-user;
+            authentication {
+                ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key";
+            }
+        }
+        user barnesry {
+            uid 2001;
+            class super-user;
+            authentication {
+                ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC+meE8GUTaFAvpcZln8QPIPuc49QJW+iRMte8HH0EgS24ga3+cMmrFCXA/bllNBU3jZy2VeGTAZkhECwZjnPSE9Z6Fc/8Gw8D7ZevdPNOF4ZsUMskbrH4mqZ/SpQO3M60uizvbCpZN7TuKaZbPA9zn/gF3JLWUPpmGGiHztkzEDygZ9yRQON/qXyBrI7v8rb5zVe+8QgDNmr2msuVHlF701hM8GpIpEfP2+/7MYLxNQMJdS14NemVo7bXAP5Lw6mde//d99QHGUkm6ptTmBj/6nXUM1CFKUC/GH3n+2h6w1gtTtjUTM96rIcYi5amb8vIWa9oOA2BxidFaOOnFO5SP barnesry@barnesry-mbp";
+            }
+        }
+    }
+    services {
+        ssh {
+            root-login allow;
+        }
+        netconf {
+            ssh;
+        }
+    }
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any notice;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+    extensions {
+        providers {
+            juniper {
+                license-type juniper deployment-scope commercial;
+            }
+            chef {
+                license-type juniper deployment-scope commercial;
+            }
+        }
+    }
+}
+
+groups {
+    PRIMARY_LSP {
+      protocols {
+          mpls {
+              label-switched-path <*> {
+                  optimize-timer 3600;
+                  priority 0 0;
+                  least-fill;
+                  node-link-protection;
+                  adaptive;
+                  auto-bandwidth {
+                      adjust-interval 600;
+                      adjust-threshold 15;
+                      minimum-bandwidth 10m;
+                      maximum-bandwidth 1g;
+                  }
+              }
+          }
+      }
+    }
+    RSVP {
+        protocols {
+            rsvp {
+                interface <*> {
+                        link-protection;
+                }
+            }
+        }
+    }
+}
+
+interfaces {
+    lo0 {
+        unit 0 {
+            family inet {
+                address {{ host.loopback.ip }}/32;
+                primary;
+            }
+            family iso {
+                address {{ isis.systemid }};
+            }
+        }
+    }
+    ge-0/0/0 {
+        unit 0 {
+            family inet {
+                dhcp;
+            }
+        }
+    }
+{% for interface in interfaces %}
+    {{ interface.name }} {
+        {% if interface.vlans is defined %}
+        vlan-tagging;
+        {% for vlan in interface.vlans %}
+        unit {{ vlan.id }} {
+            description "{{ vlan.description }}";
+            vlan-id {{ vlan.id }};
+            family inet {
+                address {{ vlan.ip }}/24;
+            }
+        }
+        {% endfor %}
+        {% else %}
+        unit 0 {
+            description "{{interface.description }}";
+            family inet {
+                address {{ interface.ip }}/24;
+            }
+            {% if interface.protocols is defined %}
+            {% for protocol in interface.protocols %}
+            family {{ protocol }};
+            {% endfor %}
+            {% endif %}
+        }
+        {% endif %}
+    }
+{% endfor -%}
+}
+
+protocols {
+    lldp {
+        interface all;
+    }
+}
+vlans {
+    default {
+        vlan-id 1;
+    }
+}
+
+
+protocols {
+    isis {
+        level 1 disable;
+        level 2 wide-metrics-only;
+        {% for interface in interfaces %}
+         interface {{ interface.name }} {
+            point-to-point;
+            level 1 disable;
+        }
+        {% endfor %}
+        interface lo0.0 {
+            level 1 disable;
+            passive;
+        }
+        interface ge-0/0/0 {
+            # vagrant_bridge
+            disable;
+        }
+        interface ge-0/0/1 {
+            # vboxnet0
+            disable;
+        }
+        inactive: interface ge-0/0/2 {
+            # CE facing routing-instance
+            disable;
+        }
+    }
+    bgp {
+        log-updown;
+        group IBGP-RR {
+            import bgp-underlay-in;
+            export bgp-underlay-out;
+            type internal;
+            mtu-discovery;
+            family inet {
+                unicast;
+            }
+            multipath;
+            local-address {{ host.loopback.ip }}
+            {% for neighbor in bgp.neighbors %}
+            neighbor {{ neighbor.peer_ip }} {
+                description {{ neighbor.name }};
+            }
+            {% endfor %}
+        }
+    }
+    rsvp {
+        apply-groups RSVP;
+        {% for interface in interfaces %}
+        interface {{ interface.name }};
+        {% endfor %}
+    }
+    mpls {
+        apply-groups PRIMARY_LSP;
+        statistics {
+            file lsp-statistics size 5m files 10;
+            interval 300;
+            auto-bandwidth;
+        }
+        interface lo0.0;
+        {% for interface in interfaces %}
+        interface {{ interface.name }};
+        {% endfor %}
+        {% if inventory_hostname == 'vsrx1' %}
+        {% for num in range(8) %}
+        label-switched-path vsrx1_to_vsrx6_{{ num }} {
+            to 192.168.0.6;
+        }
+        {% endfor %}
+        {% endif %}
+        {% if inventory_hostname == 'vsrx6' %}
+        {% for num in range(8) %}
+        label-switched-path vsrx6_to_vsrx1_{{ num }} {
+              to 192.168.0.1;
+        }
+        {% endfor %}
+        {% endif %}
+    }
+}
+
+routing-options {
+    autonomous-system 65000;
+    router-id {{ host.loopback.ip }};
+    forwarding-table {
+        export PFE-LB;
+    }
+}
+
+policy-options {
+    policy-statement PFE-LB {
+        then {
+            load-balance per-packet;
+        }
+    }
+    policy-statement bgp-underlay-in {
+        term loopbacks {
+            from {
+                route-filter 10.101.0.0/24 orlonger;
+            }
+            then accept;
+        }
+        term reject {
+            then reject;
+        }
+    }
+    policy-statement bgp-underlay-out {
+      term vpn-route {
+          /* export all vpn routes */
+          from family inet-vpn;
+          then accept;
+      }
+      term loopback {
+            from {
+                protocol direct;
+                route-filter {{ host.loopback.ip }}/32 orlonger;
+            }
+            then {
+                next-hop self;
+                accept;
+            }
+        }
+    }
+}
+
+security {
+    forwarding-options {
+        family {
+            mpls {
+               mode packet-based;
+            }
+        }
+    }
+}
+
+{% if instances is defined %}
+{% for instance in instances %}
+routing-instances {
+    {{ instance.name }} {
+        instance-type vrf;
+        {% for interface in instance.interfaces %}
+        interface {{ interface.name }};
+        {% endfor %}
+        route-distinguisher {{ host.loopback.ip }}:{{ instance.rd }};
+        {% if instance.importpolicy is not defined and instance.exportpolicy is not defined %}
+        vrf-target {{ instance.rt }};
+        {% endif %}
+        {% if instance.importpolicy is defined %}
+        vrf-import {{ instance.name }}-import;
+        {% endif %}
+        {% if instance.exportpolicy is defined %}
+        vrf-export {{ instance.name }}-export;
+        {% endif %}
+        vrf-table-label;
+    }
+}
+policy-options {
+    {% if instance.exportpolicy is defined %}
+    policy-statement {{ instance.exportpolicy }} {
+        term unicast {
+            from family inet;
+                then {
+                    community add {{ instance.name }}-target;
+                    accept;
+                }
+        }
+    }
+    {% endif %}
+    {% if instance.importpolicy is defined %}
+    policy-statement {{ instance.name }}-import {
+        term unicast {
+            from {
+                family inet;
+                community {{ instance.name }}-target;
+            }
+            then accept;
+        }
+    }
+    {% endif %}
+    community {{ instance.name }}-target members {{ instance.rt }};
+}
+{% endfor %}
+{% endif %}

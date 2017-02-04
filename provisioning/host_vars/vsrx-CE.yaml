@@ -1,0 +1,98 @@
+host:
+    loopback:
+        ip: 10.201.1.1
+
+interfaces:
+    - name: ge-0/0/1
+      ip: 192.168.56.205
+      description: Management_vboxnet0
+    - name: ge-0/0/2
+      vlans:
+        - id: 1
+          ip: 10.1.1.2
+          description: to vsrx-PE1-white
+        - id: 2
+          ip: 10.2.1.2
+          description: to vsrx-PE1-black
+    - name: ge-0/0/3
+      vlans:
+        - id: 1
+          ip: 10.1.2.2
+          description: to vsrx-PE2-white
+        - id: 2
+          ip: 10.2.2.2
+          description: to vsrx-PE2-black
+    - name: ge-0/0/4
+      vlans:
+        - id: 1
+          ip: 10.1.3.2
+          description: to vsrx-PE3-white
+        - id: 2
+          ip: 10.2.3.2
+          description: to vsrx-PE3-black
+    - name: ge-0/0/5
+      vlans:
+        - id: 1
+          ip: 10.1.4.2
+          description: to vsrx-PE4-white
+        - id: 2
+          ip: 10.2.4.2
+          description: to vsrx-PE4-black
+
+instances:
+  - name: ce1-black
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/2.1
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.1.1.1
+  - name: ce1-white
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/2.2
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.2.1.1    
+  - name: ce2-black
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/3.1
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.1.2.1    
+  - name: ce2-white
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/3.2 
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.2.2.1    
+  - name: ce3-black
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/4.1
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.1.3.1    
+  - name: ce3-white
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/4.2
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.2.3.1    
+  - name: ce4-black
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/5.1
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.1.4.1    
+  - name: ce4-white 
+    type: virtual-router
+    interfaces:
+    - name: ge-0/0/5.2
+    routes:
+      - prefix: 0.0.0.0/0
+        nexthop: 10.2.4.1

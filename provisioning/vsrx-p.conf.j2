@@ -1,0 +1,215 @@
+#jinja2: lstrip_blocks: True
+
+system {
+    host-name {{ inventory_hostname }};
+    root-authentication {
+        encrypted-password "$1$fv3Ke4LT$10nlsy3SEJy5ainm.kPTd.";
+        ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key";
+    }
+    login {
+        user vagrant {
+            uid 2000;
+            class super-user;
+            authentication {
+                ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key";
+            }
+        }
+        user barnesry {
+            uid 2001;
+            class super-user;
+            authentication {
+                ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC+meE8GUTaFAvpcZln8QPIPuc49QJW+iRMte8HH0EgS24ga3+cMmrFCXA/bllNBU3jZy2VeGTAZkhECwZjnPSE9Z6Fc/8Gw8D7ZevdPNOF4ZsUMskbrH4mqZ/SpQO3M60uizvbCpZN7TuKaZbPA9zn/gF3JLWUPpmGGiHztkzEDygZ9yRQON/qXyBrI7v8rb5zVe+8QgDNmr2msuVHlF701hM8GpIpEfP2+/7MYLxNQMJdS14NemVo7bXAP5Lw6mde//d99QHGUkm6ptTmBj/6nXUM1CFKUC/GH3n+2h6w1gtTtjUTM96rIcYi5amb8vIWa9oOA2BxidFaOOnFO5SP barnesry@barnesry-mbp";
+            }
+        }
+    }
+    services {
+        ssh {
+            root-login allow;
+        }
+        netconf {
+            ssh;
+        }
+    }
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any notice;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+    extensions {
+        providers {
+            juniper {
+                license-type juniper deployment-scope commercial;
+            }
+            chef {
+                license-type juniper deployment-scope commercial;
+            }
+        }
+    }
+}
+
+groups {
+    PRIMARY_LSP {
+      protocols {
+          mpls {
+              label-switched-path <*> {
+                  optimize-timer 3600;
+                  priority 0 0;
+                  least-fill;
+                  node-link-protection;
+                  adaptive;
+                  auto-bandwidth {
+                      adjust-interval 600;
+                      adjust-threshold 15;
+                      minimum-bandwidth 10m;
+                      maximum-bandwidth 1g;
+                  }
+              }
+          }
+      }
+    }
+    RSVP {
+        protocols {
+            rsvp {
+                interface <*> {
+                        link-protection;
+                }
+            }
+        }
+    }
+}
+
+
+interfaces {
+	lo0 {
+		unit 0 {
+			family inet {
+				address {{ host.loopback.ip }}/32;
+                primary;
+			}
+			family iso {
+				address {{ isis.systemid }};
+			}
+		}
+	}
+  ge-0/0/0 {
+      description "default_vagrant_bridged";
+      unit 0 {
+          family inet {
+              dhcp;
+          }
+      }
+  }
+{% for interface in interfaces %}
+    {{ interface.name }} {
+        unit 0 {
+            description "{{interface.description }}";
+            family inet {
+                address {{ interface.ip }}/24;
+            }
+            {% if interface.protocols is defined %}
+            {% for protocol in interface.protocols %}
+            family {{ protocol }};
+            {% endfor %}
+            {% endif %}
+        }
+    }
+{% endfor %}
+}
+protocols {
+    lldp {
+        interface all;
+    }
+}
+vlans {
+    default {
+        vlan-id 1;
+    }
+}
+
+protocols {
+    bgp {
+        group RR-CLIENTS {
+            type internal;
+            local-address {{ host.loopback.ip }};
+            family inet {
+                unicast;
+            }
+            multipath;
+            mtu-discovery;
+            cluster {{ host.loopback.ip }};
+            {% for neighbor in bgp.neighbors %}
+            neighbor {{ neighbor.peer_ip }} {
+                description {{ neighbor.name }};
+            }
+            {% endfor %}
+        }
+    }       
+	isis {
+        level 1 disable;
+        level 2 wide-metrics-only;
+		{% for interface in interfaces %}
+        interface {{ interface.name }} {
+            point-to-point;
+            level 1 disable;
+        }
+		{% endfor %}
+    	interface lo0.0 {
+    		level 1 disable;
+    		passive;
+    	}
+        interface ge-0/0/0.0 {
+            # vagrant_bridge
+            disable;
+        }
+        interface ge-0/0/1.0 {
+            # vboxnet0
+            disable;
+        }
+    }
+    rsvp {
+      apply-groups RSVP;
+    	{% for interface in interfaces %}
+    	interface {{ interface.name }};
+    	{% endfor %}
+    }
+    mpls {
+    	interface lo0.0;
+    	{% for interface in interfaces %}
+    	interface {{ interface.name }};
+        {% endfor %}
+    }
+}
+
+
+routing-options {
+    autonomous-system 65000;
+    router-id {{ host.loopback.ip }};
+    forwarding-table {
+        export PFE-LB;
+    }
+}
+
+policy-options {
+    policy-statement PFE-LB {
+        then {
+            load-balance per-packet;
+        }
+    }
+}
+
+security {
+    forwarding-options {
+        family {
+            mpls {
+               mode packet-based;
+            }
+        }
+    }
+}

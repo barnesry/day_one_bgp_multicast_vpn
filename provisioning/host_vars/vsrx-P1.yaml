@@ -1,0 +1,47 @@
+
+host:
+    loopback:
+        ip: 10.101.5.5
+
+interfaces:
+    - name: ge-0/0/1
+      ip: 192.168.56.200
+      description: Management_vboxnet0
+    - name: ge-0/0/2
+      ip: 10.100.1.1
+      description: to vsrx-PE1
+      protocols:
+      - iso
+      - mpls      
+    - name: ge-0/0/3
+      ip: 10.100.2.1
+      description: to vsrx-PE2
+      protocols:
+      - iso
+      - mpls      
+    - name: ge-0/0/4
+      ip: 10.100.3.1
+      description: to vsrx-PE3
+      protocols:
+      - iso
+      - mpls      
+    - name: ge-0/0/5
+      ip: 10.100.4.1
+      description: to vsrx-PE4     
+      protocols:
+      - iso
+      - mpls      
+
+isis:
+    systemid: 49.0002.0192.0168.0000.0002.00
+
+bgp:
+    neighbors:
+        - name: vsrx-PE1
+          peer_ip: 10.101.1.1
+        - name: vsrx-PE2
+          peer_ip: 10.101.2.2
+        - name: vsrx-PE3
+          peer_ip: 10.101.3.3
+        - name: vsrx-PE4
+          peer_ip: 10.101.4.4
