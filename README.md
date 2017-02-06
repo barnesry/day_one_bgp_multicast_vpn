@@ -4,17 +4,20 @@ for BGP Multicast VPNs using vSRX running 12.1X47-D15.4
 
 http://forums.juniper.net/jnet/attachments/jnet/Day1Books/87/3/TW_BGP_MVPNs.pdf
 
-# Topology
-#
-#  vsrx-CE1 -- dot1q -- vsrx-PE1  ----   vsrx-PE2 --dot1q -- vsrx-CE2
-#                                 \ /            
-#                               vsrx-P1 (RR)
-#                                 /  \            
-#  vsrx-CE3 -- dot1q -- vsrx-PE3  ----   vsrx-PE4 --dot1q -- vsrx-CE4
+ ` # Topology
+  #
+  #  vsrx-CE1 -- dot1q -- vsrx-PE1  ----   vsrx-PE2 --dot1q -- vsrx-CE2
+  #                                 \ /            
+  #                               vsrx-P1 (RR)
+  #                                 /  \            
+  #  vsrx-CE3 -- dot1q -- vsrx-PE3  ----   vsrx-PE4 --dot1q -- vsrx-CE4`
 
 
 * IS-IS is configured as the IGP with AS65000 for iBGP route exchange between PE's.
+* P1 serves as the BGP-RR for this topology.
 * 8x LSPs are configured between each PE, configured with auto-bandwidth and node-link protection.
+* One vsrx-CE has 4x interfaces connected to each PE using VLANs simulating a customer CE with a single VM.
+* Each vsrx when loaded consume ~8% CPU on my quad core macbook pro Intel Core i7 with ~1G of RAM per VM.
 
 # System Requirements
 ### Resources per vSRX
@@ -65,16 +68,34 @@ network.
 If you run into issues launching for the first time, ensure you have the required Vagrant plugins
 installed on your system. I've run into this multiple times, and it always gets me.
 
-$ vagrant plugin install vagrant-junos
-$ vagrant plugin install vagrant-host-shell
+`$ vagrant plugin install vagrant-junos`
+`$ vagrant plugin install vagrant-host-shell`
 
-### Login
+### Device Console Login
+If 'vagrant ssh <device>' doesn't work and you need to root in via console for some reason.
   * vSRX User : root
   * vSRX Pass : Juniper1
 
+Example Below from earlier derived topology.
 --------------------------------------
 
-    barnesry-mbp:~ barnesry$ cd Desktop/
+    barnesry-mbp:day_one_bgp_mvpn barnesry$ vagrant status
+    Current machine states:
+
+    srv1                      not created (virtualbox)
+    srv2                      not created (virtualbox)
+    vsrx-PE1                  running (virtualbox)
+    vsrx-PE3                  running (virtualbox)
+    vsrx-PE2                  running (virtualbox)
+    vsrx-PE4                  running (virtualbox)
+    vsrx-P1                   running (virtualbox)
+    vsrx-CE                   running (virtualbox)
+
+    This environment represents multiple VMs. The VMs are all listed
+    above with their current state. For more information about a specific
+    VM, run `vagrant status NAME`.
+
+    
     barnesry-mbp:Desktop barnesry$ git clone git@git.juniper.net:barnesry/6vsrx-2srv-rsvp-te.git
     Cloning into '6vsrx-2srv-rsvp-te'...
     remote: Counting objects: 32, done.
