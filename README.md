@@ -4,13 +4,13 @@ for BGP Multicast VPNs using vSRX running 12.1X47-D15.4
 
 http://forums.juniper.net/jnet/attachments/jnet/Day1Books/87/3/TW_BGP_MVPNs.pdf
 
-  # Topology
-  #
-  #  vsrx-CE1 -- dot1q -- vsrx-PE1  ----   vsrx-PE2 --dot1q -- vsrx-CE2
-  #                                 \ /            
-  #                               vsrx-P1 (RR)
-  #                                 /  \            
-  #  vsrx-CE3 -- dot1q -- vsrx-PE3  ----   vsrx-PE4 --dot1q -- vsrx-CE4
+# Topology
+
+    vsrx-CE1 -- dot1q -- vsrx-PE1  ----   vsrx-PE2 --dot1q -- vsrx-CE2
+                                    \ /            
+                                  vsrx-P1 (RR)
+                                    /  \            
+    vsrx-CE3 -- dot1q -- vsrx-PE3  ----   vsrx-PE4 --dot1q -- vsrx-CE4
 
 
 * IS-IS is configured as the IGP with AS65000 for iBGP route exchange between PE's.
@@ -68,8 +68,9 @@ network.
 If you run into issues launching for the first time, ensure you have the required Vagrant plugins
 installed on your system. I've run into this multiple times, and it always gets me.
 
-  $ vagrant plugin install vagrant-junos
-  $ vagrant plugin install vagrant-host-shell
+    $ vagrant plugin install vagrant-junos
+    
+    $ vagrant plugin install vagrant-host-shell
 
 ### Device Console Login
 If 'vagrant ssh <device>' doesn't work and you need to root in via console for some reason.
