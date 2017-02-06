@@ -16,35 +16,35 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     config.ssh.insert_key = false
 
-    (1..2).each do |id|
+    # (1..2).each do |id|
 
-        srv_name  = ( "srv" + id.to_s ).to_sym
+    #     srv_name  = ( "srv" + id.to_s ).to_sym
 
-        ##########################
-        ## Server          #######
-        ##########################
-        config.vm.define srv_name do |srv|
-            srv.vm.box = "robwc/minitrusty64"
-            srv.vm.hostname = "server#{id}"
+    #     ##########################
+    #     ## Server          #######
+    #     ##########################
+    #     config.vm.define srv_name do |srv|
+    #         srv.vm.box = "robwc/minitrusty64"
+    #         srv.vm.hostname = "server#{id}"
 
-            srv.vm.provider "virtualbox" do |v|
-                v.name = srv.vm.hostname
-                v.memory = 512
-            end
+    #         srv.vm.provider "virtualbox" do |v|
+    #             v.name = srv.vm.hostname
+    #             v.memory = 512
+    #         end
 
-            srv.vm.network 'private_network', ip: "10.10.#{id}.2", virtualbox__intnet: "server_vsrx#{id}"
-            srv.ssh.insert_key = true
-	    srv.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+    #         srv.vm.network 'private_network', ip: "10.10.#{id}.2", virtualbox__intnet: "server_vsrx#{id}"
+    #         srv.ssh.insert_key = true
+	#     srv.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
             
-	    srv.vm.provision "shell",
-               inline: "sudo route add -net 10.10.0.0 netmask 255.255.0.0 gw 10.10.#{id}.1
-	       		sudo apt-get -y update
-	       		sudo apt-get -y install traceroute curl telnet apache2
-		        sudo wget -progress=dot:giga -O /var/www/html/10MB.zip http://download.thinkbroadband.com/10MB.zip
-		        echo 'for i in \$(seq 1 10); do wget --progress=dot:giga -O 10MB.zip http://10.10.#{id}.2/10MB.zip; done' > wget_files.sh
-			sudo chmod +x wget_files.sh"
-       end
-    end
+	#     srv.vm.provision "shell",
+    #            inline: "sudo route add -net 10.10.0.0 netmask 255.255.0.0 gw 10.10.#{id}.1
+	#        		sudo apt-get -y update
+	#        		sudo apt-get -y install traceroute curl telnet apache2
+	# 	        sudo wget -progress=dot:giga -O /var/www/html/10MB.zip http://download.thinkbroadband.com/10MB.zip
+	# 	        echo 'for i in \$(seq 1 10); do wget --progress=dot:giga -O 10MB.zip http://10.10.#{id}.2/10MB.zip; done' > wget_files.sh
+	# 		sudo chmod +x wget_files.sh"
+    #    end
+    # end
 
     ## Core Left PE Routers ##
     [1,3].each do |id|
