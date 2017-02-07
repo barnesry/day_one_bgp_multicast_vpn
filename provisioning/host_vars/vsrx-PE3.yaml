@@ -35,3 +35,23 @@ bgp:
     neighbors:
         - name: vsrx-P1
           peer_ip: 10.101.5.5        
+
+instances:
+  - name: black
+    rt: target:65000:111
+    rd: 111
+    interfaces:
+      - name: ge-0/0/2.1
+    prefixes:
+      - route: 10.11.3.0/24
+        nexthop: 10.1.3.2
+  - name: white
+    rt: target:65000:222
+    rd: 222
+    importpolicy: white-import
+    exportpolicy: white-export
+    interfaces:
+      - name: ge-0/0/2.2
+    prefixes:
+      - route: 10.22.3.0/24
+        nexthop: 10.2.3.2 

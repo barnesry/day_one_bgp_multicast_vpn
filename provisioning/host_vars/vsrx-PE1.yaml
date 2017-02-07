@@ -42,7 +42,7 @@ instances:
     interfaces:
       - name: ge-0/0/2.1
     prefixes:
-      - route: 10.11.1.0/30
+      - route: 10.11.1.0/24
         nexthop: 10.1.1.2
   - name: white
     rt: target:65000:222
@@ -52,6 +52,6 @@ instances:
     interfaces:
       - name: ge-0/0/2.2
     prefixes:
-      - route: 10.22.1.0/30
+      - route: 10.22.1.0/24
         nexthop: 10.2.1.2        
   

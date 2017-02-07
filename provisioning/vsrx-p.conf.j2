@@ -138,7 +138,7 @@ protocols {
         group RR-CLIENTS {
             type internal;
             local-address {{ host.loopback.ip }};
-            family inet {
+            family inet-vpn {
                 unicast;
             }
             multipath;
@@ -178,6 +178,13 @@ protocols {
     	{% for interface in interfaces %}
     	interface {{ interface.name }};
     	{% endfor %}
+    }
+    ldp {
+    	{% for interface in interfaces %}
+    	interface {{ interface.name }};
+    	{% endfor %}
+        track-igp-metric;
+        igp-synchronization holddown-interval 10;     
     }
     mpls {
     	interface lo0.0;

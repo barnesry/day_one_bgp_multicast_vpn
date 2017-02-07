@@ -1,6 +1,25 @@
 host:
     loopback:
         ip: 10.201.1.1
+        units:
+        - prefix: 10.11.1.1/24
+          description: ce1-black
+          value: 1
+        - prefix: 10.22.1.1/24
+          description: ce1-white
+          value: 11
+        - prefix: 10.11.3.1/24
+          description: ce3-black
+          value: 3
+        - prefix: 10.22.3.1/24
+          description: ce3-white
+          value: 33
+        - prefix: 10.11.4.1/24
+          description: ce4-black
+          value: 4
+        - prefix: 10.22.4.1/24
+          description: ce4-white
+          value: 44        
 
 interfaces:
     - name: ge-0/0/1
@@ -44,6 +63,7 @@ instances:
     type: virtual-router
     interfaces:
     - name: ge-0/0/2.1
+    - name: lo0.1
     routes:
       - prefix: 0.0.0.0/0
         nexthop: 10.1.1.1
@@ -51,6 +71,7 @@ instances:
     type: virtual-router
     interfaces:
     - name: ge-0/0/2.2
+    - name: lo0.11
     routes:
       - prefix: 0.0.0.0/0
         nexthop: 10.2.1.1    
@@ -72,6 +93,7 @@ instances:
     type: virtual-router
     interfaces:
     - name: ge-0/0/4.1
+    - name: lo0.3
     routes:
       - prefix: 0.0.0.0/0
         nexthop: 10.1.3.1    
@@ -79,6 +101,7 @@ instances:
     type: virtual-router
     interfaces:
     - name: ge-0/0/4.2
+    - name: lo0.33
     routes:
       - prefix: 0.0.0.0/0
         nexthop: 10.2.3.1    
@@ -86,6 +109,7 @@ instances:
     type: virtual-router
     interfaces:
     - name: ge-0/0/5.1
+    - name: lo0.4
     routes:
       - prefix: 0.0.0.0/0
         nexthop: 10.1.4.1    
@@ -93,6 +117,7 @@ instances:
     type: virtual-router
     interfaces:
     - name: ge-0/0/5.2
+    - name: lo0.44
     routes:
       - prefix: 0.0.0.0/0
         nexthop: 10.2.4.1

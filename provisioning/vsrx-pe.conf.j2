@@ -180,7 +180,7 @@ protocols {
             export bgp-underlay-out;
             type internal;
             mtu-discovery;
-            family inet {
+            family inet-vpn {
                 unicast;
             }
             multipath;
@@ -197,6 +197,13 @@ protocols {
         {% for interface in interfaces %}
         interface {{ interface.name }};
         {% endfor %}
+    }
+    ldp {
+        {% for interface in interfaces %}
+        interface {{ interface.name }};
+        {% endfor %} 
+        track-igp-metric;
+        igp-synchronization holddown-interval 10;       
     }
     mpls {
         apply-groups PRIMARY_LSP;
@@ -245,6 +252,11 @@ policy-options {
             from {
                 route-filter 10.101.0.0/24 orlonger;
             }
+            then accept;
+        }
+        term unicast-vpn {
+            /* accept all VPN routes */
+            from family inet-vpn;
             then accept;
         }
         term reject {
@@ -299,6 +311,13 @@ routing-instances {
         vrf-export {{ instance.name }}-export;
         {% endif %}
         vrf-table-label;
+        routing-options {
+            static {
+                {% for prefix in instance.prefixes %}
+                route {{ prefix.route }} next-hop {{ prefix.nexthop }};
+                {% endfor %}
+            }
+        }
     }
 }
 policy-options {

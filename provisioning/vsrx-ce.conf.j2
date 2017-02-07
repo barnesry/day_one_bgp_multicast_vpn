@@ -64,6 +64,16 @@ interfaces {
                 primary;
 			}
 		}
+        {% if host.loopback.units is defined %}
+        {% for unit in host.loopback.units %}
+        unit {{ unit.value }} {
+            description {{ unit.description }};
+            family inet {
+                address {{ unit.prefix }};
+            }
+        }
+        {% endfor %}
+        {% endif %}        
 	}
   ge-0/0/0 {
       description "default_vagrant_bridged";
